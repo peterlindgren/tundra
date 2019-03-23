@@ -49,6 +49,14 @@ static bool DebuggerAttached()
 #endif
 }
 
+static void NORETURN FlushAndAbort()
+{
+  // The C standard does not require 'abort' to flush stream buffers.
+  // On Windows at least, an explicit 'fflush' is required for stderr messages to actually be shown.
+  fflush(NULL);
+  abort();
+}
+
 void InitCommon(void)
 {
 #if defined(TUNDRA_WIN32)
@@ -69,7 +77,7 @@ void NORETURN Croak(const char* fmt, ...)
   va_end(args);
   fprintf(stderr, "\n");
   if (DebuggerAttached())
-    abort();
+    FlushAndAbort();
   else
     exit(1);
 }
@@ -83,7 +91,7 @@ void NORETURN CroakErrno(const char* fmt, ...)
   fprintf(stderr, "\n");
   fprintf(stderr, "errno: %d (%s)\n", errno, strerror(errno));
   if (DebuggerAttached())
-    abort();
+    FlushAndAbort();
   else
     exit(1);
 }
@@ -95,7 +103,7 @@ void NORETURN CroakAbort(const char* fmt, ...)
   vfprintf(stderr, fmt, args);
   va_end(args);
   fprintf(stderr, "\n");
-  abort();
+  FlushAndAbort();
 }
 
 uint32_t Djb2Hash(const char *str_)
